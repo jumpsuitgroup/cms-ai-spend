@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CMS API spend — current vs proposed</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#fdfdfd; --accent:#0a7d4a; --warn:#b45309; --red:#b91c1c; --muted:#666; --border:#ddd; --code-bg:#f5f5f5; --ink:#16324f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e4e4e4; --bg:#1a1a1a; --accent:#4ade80; --warn:#fbbf24; --red:#f87171; --muted:#999; --border:#333; --code-bg:#262626; --ink:#d6e4f0; }
+  }
+  * { box-sizing:border-box; }
+  body { font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); background:var(--bg); max-width:980px; margin:1.5em auto; padding:0 1.5em 3em; }
+  h1,h2,h3,h4 { font-weight:600; margin-top:1.6em; line-height:1.3; }
+  h1 { font-size:1.7em; margin-bottom:.2em; }
+  h2 { font-size:1.35em; border-bottom:1px solid var(--border); padding-bottom:.2em; }
+  h3 { font-size:1.1em; }
+  a { color:var(--accent); }
+  code { background:var(--code-bg); padding:.15em .35em; border-radius:3px; font-size:.92em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; word-break:break-word; }
+  pre { background:var(--code-bg); padding:1em 1.2em; border-radius:6px; overflow-x:auto; font-size:.87em; line-height:1.5; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  pre code { background:none; padding:0; }
+  .table-wrap { overflow-x:auto; margin:.8em 0; }
+  table { border-collapse:collapse; width:100%; margin:0; font-size:.93em; }
+  th,td { border:1px solid var(--border); padding:.45em .7em; vertical-align:top; text-align:left; }
+  th { font-weight:600; background:var(--code-bg); }
+  ul { padding-left:1.4em; } li { margin:.25em 0; }
+  details { margin:.5em 0; } details > summary { cursor:pointer; font-weight:600; padding:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:2em 0; }
+  .meta { color:var(--muted); font-size:.85em; }
+  .sub { color:var(--muted); font-size:.95em; margin-top:.3em; }
+  .status { background:color-mix(in srgb, var(--accent) 12%, var(--bg)); border:1px solid var(--accent); border-radius:8px; padding:.9em 1.2em; margin:1.2em 0; }
+  .status .badge { display:inline-block; background:var(--accent); color:var(--bg); padding:.1em .6em; border-radius:4px; font-size:.78em; font-weight:600; letter-spacing:.02em; }
+  .status p { margin:.5em 0 0; font-size:.92em; }
+  .next { border:1px solid var(--warn); border-left:4px solid var(--warn); border-radius:8px; padding:.8em 1.2em; margin:1.2em 0; background:color-mix(in srgb, var(--warn) 8%, var(--bg)); }
+  .next > summary { cursor:pointer; font-weight:600; font-size:1.02em; padding:0; }
+  .next > summary .meta { font-weight:400; }
+  .next ol { margin:.5em 0 .1em 1.3em; padding:0; }
+  .next ol li { margin:.3em 0; }
+  .next .who { font-weight:600; }
+  .pill { display:inline-block; font-size:.78em; padding:.1em .55em; border-radius:10px; background:var(--code-bg); color:var(--muted); margin-left:.4em; vertical-align:1px; }
+  .pill.done { background:var(--accent); color:var(--bg); }
+  .pill.now  { background:var(--warn);   color:var(--bg); }
+  .pill.next { background:var(--code-bg); color:var(--fg); border:1px solid var(--border); }
+  .pill.warn { background:var(--red);    color:var(--bg); }
+  .callout { border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:4px; padding:.7em 1em; margin:1em 0; font-size:.93em; background:color-mix(in srgb, var(--accent) 5%, var(--bg)); }
+  .tabbar { display:flex; flex-wrap:wrap; gap:.2em; border-bottom:2px solid var(--border); margin:1.2em 0 1.5em; }
+  .tabbar .tab { padding:.55em 1em; cursor:pointer; border:1px solid transparent; border-bottom:none; border-radius:6px 6px 0 0; font:inherit; font-weight:500; font-size:.95em; color:var(--muted); background:none; margin-bottom:-2px; }
+  .tabbar .tab:hover { color:var(--fg); }
+  .tabbar .tab.active { color:var(--fg); border-color:var(--border); border-bottom:2px solid var(--bg); background:var(--bg); font-weight:600; }
+  .pane { display:none; } .pane.active { display:block; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+  @media (max-width:760px) { .pair { grid-template-columns:1fr; } }
+  .col { border:1px solid var(--border); border-radius:10px; padding:.9em 1em 1em; background:color-mix(in srgb, var(--code-bg) 55%, var(--bg)); }
+  .col h3 { margin-top:0; }
+  .step { border:1px solid var(--border); border-radius:8px; padding:.55em .75em; margin:.4em 0; background:var(--bg); }
+  .step b { display:block; }
+  .step span { color:var(--muted); font-size:.88em; }
+  .arrow { text-align:center; color:var(--muted); font-size:.85em; margin:.1em 0; }
+  .money { font-variant-numeric:tabular-nums; }
+  .barrow { display:grid; grid-template-columns:minmax(0,12rem) minmax(4rem,1fr) auto; gap:.5em; align-items:center; margin:.35em 0; font-size:.9em; }
+  .barrow > :first-child { overflow-wrap:anywhere; }
+  .status-row { display:flex; justify-content:space-between; gap:.8em; flex-wrap:wrap; align-items:center; }
+  .track { background:var(--code-bg); border-radius:4px; height:18px; overflow:hidden; }
+  .fill { height:100%; border-radius:4px; }
+  .fill.a { background:#0f6e56; }
+  .fill.b { background:#3d5a80; }
+  .fill.c { background:#c47b2b; }
+  .fill.d { background:#8a8f98; }
+  svg.flow { width:100%; height:auto; display:block; }
+  .sample { border-left:3px solid var(--border); padding:.2em 0 .2em 1em; margin:.8em 0; }
+  .note { font-size:.9em; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CMS API spend — current vs proposed</h1>
+  <div class="sub">How a coverage page spends the xAI bill today, and the four changes that bring it down. Nothing here is built yet.</div>
+</header>
+
+<div class="status">
+  <div class="status-row">
+    <span class="badge">DRAFT · WAITING ON APPROVAL</span>
+    <span class="meta">As of 2026-11-01</span>
+  </div>
+  <p>JSG CMS key, Oct 3–Nov 1: <strong class="money">$168.22</strong> · 60.5 million tokens · 56,399 requests. Writing model <strong class="money">$120.37</strong>. Photos <strong class="money">$35.20</strong>. Cheap model <strong class="money">$12.65</strong>.</p>
+</div>
+
+<details class="next" open>
+  <summary>Next steps <span class="meta">· 1 item</span></summary>
+  <ol>
+    <li><span class="who">Connor</span> — Approve the four orders, or say which to drop. <span class="meta">— That is the gate before anything is written into Factory or deployed.</span></li>
+  </ol>
+</details>
+
+<div class="tabbar">
+  <button class="tab active" data-pane="over">1 · Overview</button>
+  <button class="tab" data-pane="bg">2 · Today vs proposed</button>
+  <button class="tab" data-pane="work">3 · Workstreams</button>
+  <button class="tab" data-pane="plan">4 · The plan</button>
+  <button class="tab" data-pane="risk">5 · Risks</button>
+  <button class="tab" data-pane="faq">6 · FAQ</button>
+</div>
+
+<main>
+
+<section class="pane active" id="over">
+  <div class="callout">One month on the website key was $168.22. About $120 of that is the expensive writing model thinking and rereading a long brief. About $35 is photos. The CMS cost page recorded roughly $47 of it.</div>
+
+  <h2>The month, in one picture</h2>
+  <p class="note">Bar length is dollars. Oct 3–Nov 1, 2026, JSG CMS key only. Voice and storage were $0.</p>
+  <div class="barrow"><div>Writing, grok-4.5</div><div class="track"><div class="fill a" style="width:100%"></div></div><div class="money">$120.37</div></div>
+  <div class="barrow"><div>Photos</div><div class="track"><div class="fill b" style="width:29.2%"></div></div><div class="money">$35.20</div></div>
+  <div class="barrow"><div>Short calls, grok-4.3</div><div class="track"><div class="fill c" style="width:10.5%"></div></div><div class="money">$12.65</div></div>
+
+  <h3>Inside the $133.02 of text</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>What the model did</th><th>Amount</th><th class="money">Spend</th><th>What we do about it</th></tr>
+    <tr><td>Read the brief (prompt)</td><td>30.1M tokens</td><td class="money">$57.56</td><td>One heading call instead of one per section, and stop pasting the whole brief into every heading.</td></tr>
+    <tr><td>Private thinking (reasoning)</td><td>8.9M tokens</td><td class="money">$45.07</td><td>Ask for the lowest thinking setting. The model will not turn thinking fully off.</td></tr>
+    <tr><td>Words on the page (completion)</td><td>4.7M tokens</td><td class="money">$25.57</td><td>Stay. This is the article.</td></tr>
+    <tr><td>Reread a cached brief</td><td>16.8M tokens</td><td class="money">$4.83</td><td>Leave it. Cache is already the cheap line.</td></tr>
+  </table>
+  </div>
+
+  <h2>A coverage page, as an example</h2>
+  <p>Home insurance for Paul Murphy is not one request. The outline is cheap. Then the expensive model writes every section of the article as its own request, and thinks before it writes. Then it writes each short heading (“Who we are”, “Our team”) as another expensive request, with the entire writing brief pasted in again. After the words are saved, each picture slot is a separate 5-cent photo. Paul Murphy was 79 coverage pages and 176 photos. PTM Specialty was 51 coverage pages and 129 photos. Steve White, the preview site, was 9 pages of copy and 283 photos, 270 of them on October 10.</p>
+
+  <h2>Success criteria</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Criterion</th><th>Statement</th><th>Check</th><th>Status</th></tr>
+    <tr><td>The bill matches the page</td><td>The client’s AI cost page shows the dollars xAI actually charged for that page.</td><td>One staging coverage page: each writing step and each photo has a row, and the dollars match the response charge.</td><td><span class="pill next">not yet</span></td></tr>
+    <tr><td>Less thinking on structured writing</td><td>Block fill, headings, and the Problems section use the lowest thinking setting, still on grok-4.5.</td><td>A staging page is readable, and its thinking tokens are far below a current default run of the same page.</td><td><span class="pill next">not yet</span></td></tr>
+    <tr><td>Unchanged photos are free</td><td>A second run does not pay for a slot whose picture description has not changed.</td><td>Regenerate Images on an unchanged slot. No new image request. The same file stays.</td><td><span class="pill next">not yet</span></td></tr>
+    <tr><td>Entire Page still means entire page</td><td>That button rewrites the article and requests the photos again.</td><td>Entire Page on a page that already has copy produces a new article and new photo requests.</td><td><span class="pill done">true today</span></td></tr>
+  </table>
+  </div>
+
+  <h2>Out of scope</h2>
+  <ul>
+    <li>Splitting the API key. Production, staging, and laptops may keep landing on one bill.</li>
+    <li>Moving the article from grok-4.5 to grok-4.3, unless a later staging page reads wrong.</li>
+    <li>The Kangaroo key ($40.97 on the same screenshot). Different key, different product.</li>
+    <li>Publishing a client site. None of this publishes.</li>
+  </ul>
+</section>
+
+<section class="pane" id="bg">
+  <div class="callout">Photos are made while the page is written, after the words are saved. The bake does not call the model. It publishes files already saved.</div>
+
+  <h2>One coverage page</h2>
+  <div class="pair">
+    <div class="col">
+      <h3>Today</h3>
+      <div class="step"><b>1 · Outline</b><span>Cheap model. A few cents for the whole month.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>2 · Each section of the article</b><span>Expensive model. It thinks first. That thinking never appears on the site. One request per section.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>3 · Each short heading</b><span>Same expensive model. The entire writing brief is pasted into every heading.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>4 · Photos</b><span>5 cents each, one per slot, after the copy is on the page. A later Images or Entire Page run pays again even if the description did not change.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>5 · Bake</b><span>$0. Copies the saved words and files.</span></div>
+    </div>
+    <div class="col">
+      <h3>Proposed</h3>
+      <div class="step"><b>1 · Outline</b><span>Unchanged.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>2 · Each section of the article</b><span>Same expensive model. Lowest thinking setting. The checks for invented facts stay.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>3 · All short headings</b><span>One request. A short brief, not the whole writing prompt pasted six times.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>4 · Photos</b><span>Skip the slot if the description matches the file already there. Smaller pictures at 2 cents. Header can stay at 5 cents.</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><b>5 · Bake</b><span>Still $0. The AI cost page already has the lines from steps 1–4.</span></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+  <svg class="flow" viewBox="0 0 640 228" role="img" aria-label="Dollar bars for today and an illustrated after">
+    <text x="0" y="16" fill="currentColor" font-size="13" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Today, $168.22</text>
+    <rect x="0" y="26" width="458" height="16" rx="3" fill="#0f6e56"/>
+    <rect x="458" y="26" width="134" height="16" rx="3" fill="#3d5a80"/>
+    <rect x="592" y="26" width="48" height="16" rx="3" fill="#c47b2b"/>
+    <text x="0" y="60" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Green $120.37 writing. Blue $35.20 photos.</text>
+    <text x="0" y="76" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Orange $12.65 short calls.</text>
+    <text x="0" y="108" fill="currentColor" font-size="13" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Illustrated after, about $116, if the short sample scales</text>
+    <rect x="0" y="118" width="316" height="16" rx="3" fill="#0f6e56"/>
+    <rect x="316" y="118" width="95" height="16" rx="3" fill="#3d5a80"/>
+    <rect x="411" y="118" width="48" height="16" rx="3" fill="#c47b2b"/>
+    <text x="0" y="156" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Writing about $83 after less thinking.</text>
+    <text x="0" y="172" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Photos about $25 if half the slots drop to 2 cents.</text>
+    <text x="0" y="188" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Short calls unchanged.</text>
+    <text x="0" y="210" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">Heading batching and skipped reruns are extra.</text>
+    <text x="0" y="226" fill="currentColor" font-size="12" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">They are not in the $116.</text>
+  </svg>
+  </div>
+  <p class="note">The “after” bar is a sketch from one short sample, not a quote. On that sample, thinking tokens fell from 197 to 34. Applied to the $45.07 thinking line, about $37 comes off. Photo math assumes about half the pictures stay on the 5-cent model (the header) and half move to 2 cents. A real coverage page, with the long brief attached, is the measurement that replaces this sketch. That measurement is workstream 1.</p>
+
+  <h2>When a picture is requested again</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Action</th><th>New article?</th><th>New photos?</th></tr>
+    <tr><td>First time the page is empty</td><td>Yes</td><td>Yes, one per slot, after the words are saved</td></tr>
+    <tr><td>Regenerate → Body</td><td>Yes</td><td>No. Current pictures stay.</td></tr>
+    <tr><td>Regenerate → Images</td><td>No</td><td>Yes, for the slots you select. This is the Steve White pattern.</td></tr>
+    <tr><td>Regenerate → Entire Page</td><td>Yes</td><td>Yes, all slots again. Stays this way.</td></tr>
+    <tr><td>Scheduled freshness refresh</td><td>Light edit of the current article</td><td>No. This is not the Entire Page button.</td></tr>
+    <tr><td>Bake / publish</td><td>No</td><td>No. $0 on the model.</td></tr>
+  </table>
+  </div>
+
+  <h2>Workers compensation for landscapers</h2>
+  <p>Same prompt, same rules (no invented price, carrier, year, or guarantee), live grok-4.5. Together about half a cent. The first is what the model does today. The second is the lowest thinking setting it allows.</p>
+  <h3>Today’s default <span class="meta">197 thinking tokens · $0.0028</span></h3>
+  <div class="sample">
+    <p>Landscaping work often means long days outdoors, heavy equipment, and crews that change with the season. If you run that kind of business, workers compensation is one of the coverages worth understanding before a claim forces the issue. Northline Insurance is an independent agency that can walk you through how this coverage may apply to landscaping operations in your state, since the rules and requirements differ from one state to another.</p>
+    <p>A conversation with the agency can help you sort out questions around crew injuries, seasonal help, and subcontractors without treating any of those as settled facts about your own shop. Outcomes depend on your payroll, job mix, and how your state defines covered work, so nothing here promises a particular result. What Northline can do is review your situation, explain options in plain terms, and help you decide whether a workers compensation policy fits how you staff and run jobs. If you are weighing whether to ask, reaching out is a low-pressure way to get clarity before the next busy season.</p>
+  </div>
+  <h3>Lowest thinking setting <span class="meta">34 thinking tokens · $0.0026</span></h3>
+  <div class="sample">
+    <p>Northline Insurance helps landscaping business owners look at workers compensation as part of a broader risk conversation, not as a one-size product. Crew injuries can arise from equipment, lifting, uneven ground, heat, and roadside work, and how a policy may respond depends on the facts of each claim and on state rules. Seasonal help and subcontractors are topics to sort out with the agency so roles, payroll reporting, and certificates are clear before the busy months. Workers compensation requirements and benefits vary by state, so coverage that fits one operation may not match another. An independent agency can walk through your crew structure, how you hire short-term labor, and when you use outside crews, then help you compare options from multiple markets without promising a particular outcome. If you want to understand what may apply to your landscaping work, reach out to Northline Insurance and ask about workers compensation in plain terms before you make a decision.</p>
+  </div>
+  <p>The first is a little warmer. The second is a little more specific about the work. Both follow the rules. This is one short section, not a full page.</p>
+</section>
+
+<section class="pane" id="work">
+  <h2>Status</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>ID</th><th>What</th><th>Owner</th><th>Depends on</th><th>Status</th></tr>
+    <tr><td>1</td><td>Record the real charge on the client’s AI cost page, tied to the page, when the page is generated.</td><td>Connor</td><td>—</td><td><span class="pill next">next</span></td></tr>
+    <tr><td>2</td><td>Skip an unchanged photo. Use the 2-cent model for smaller pictures. Header can stay at 5 cents.</td><td>Connor</td><td>—</td><td><span class="pill next">next</span></td></tr>
+    <tr><td>3</td><td>Lowest thinking setting on the expensive writing calls. One heading call. Stay on grok-4.5.</td><td>Connor</td><td>after 1, so one page can be measured</td><td><span class="pill next">next</span></td></tr>
+    <tr><td>4</td><td>Leave Entire Page as a full rewrite. Do not wire the light scheduled edit to that button.</td><td>Connor</td><td>—</td><td><span class="pill done">already true</span></td></tr>
+  </table>
+  </div>
+  <p>All four are unstarted. The console reading and the landscaper sample are done. Factory work orders wait on approval.</p>
+
+  <h2>1 · Record the real charge <span class="pill next">next</span></h2>
+  <p>Every chat and photo response already includes the exact dollars charged. The client throws that field away. The writing recorder has never stored a live row. October’s text is invisible on the AI cost page. Images show up only because a saved file writes a row at 5 cents, which happened to match the photo bill.</p>
+  <p>Done when one staging coverage page writes one row per real call, with model, stage, tokens, and the charged dollars, on that client’s AI cost page.</p>
+
+  <h2>2 · Photos <span class="pill next">next</span></h2>
+  <p>Today every slot on a full run or an Images run calls the quality model at 5 cents. The bake does not. The change skips a slot whose description matches the file already there, and uses the 2-cent model for pictures that are not the header.</p>
+
+  <h2>3 · Less thinking, fewer heading calls <span class="pill next">next</span></h2>
+  <p>The article stays on grok-4.5. Block fill, headings, and the Problems section send the lowest thinking setting (<code>minimal</code>). The model rejects fully off. All the short headings for one page become one call, and that call does not receive the whole generation prompt. The outline and the compliance check stay on the cheap model.</p>
+
+  <h2>4 · Entire Page stays entire <span class="pill done">already true</span></h2>
+  <p>The work is to not break it. The scheduled freshness refresh keeps doing a light edit. It is not connected to the Entire Page button. Body still rewrites words and keeps photos. Images still replaces only the slots you pick.</p>
+</section>
+
+<section class="pane" id="plan">
+  <h2>The plan, in full</h2>
+  <p>Source: <code>docs/ai-spend/PLAN.md</code> in the CMS repo. Status: draft. Not in Software Factory. No work orders until this is approved. Date of the reading: 2026-11-01. Nothing here publishes a client site.</p>
+
+  <h3>The number</h3>
+  <p>The JSG CMS key (suffix 77TV) shows $168.22 for Oct 3–Nov 1. Production and staging both use that key. Local env files use it too. One shared bill stays. That was a decision, not an open question.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>What the CMS had written down for October</th><th>Volume</th><th>List price</th></tr>
+    <tr><td>Production photos, quality model at $0.05</td><td>652 images</td><td class="money">$32.60</td></tr>
+    <tr><td>Production page copy, grok-4.5, logged calls only</td><td>1,247 calls, 4.8M input, 335k output</td><td class="money">$11.66</td></tr>
+    <tr><td>Production planner and compliance</td><td>230 + 230 calls</td><td class="money">$0.31</td></tr>
+    <tr><td>Staging drafts and photos</td><td>29 drafts, 38 images</td><td>about $3</td></tr>
+    <tr><td>Explained by saved drafts and saved files</td><td></td><td>about $47</td></tr>
+    <tr><td>On the console and missing from the CMS ledger</td><td></td><td>about $121</td></tr>
+  </table>
+  </div>
+  <p>The in-app cost page prices grok-4.5 at $3 / $15 per million tokens. The list price is $2 input and $6 output. Every Writing row in the ledger is a September draft backfill. The live text recorder has written nothing. Images are recorded when a file is saved, which is why the page looks like a photo bill.</p>
+
+  <h3>Where the $121 went</h3>
+  <p>Usage Explorer, same key and dates. Text $133.02 and images $35.20 add up to $168.22.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Line</th><th>Usage</th><th>Spend</th></tr>
+    <tr><td>Prompt text tokens</td><td>30.1M</td><td class="money">$57.56</td></tr>
+    <tr><td>Reasoning text tokens</td><td>8.9M</td><td class="money">$45.07</td></tr>
+    <tr><td>Completion text tokens</td><td>4.7M</td><td class="money">$25.57</td></tr>
+    <tr><td>Cached prompt text tokens</td><td>16.8M</td><td class="money">$4.83</td></tr>
+    <tr><td>Text</td><td></td><td class="money">$133.02</td></tr>
+    <tr><td>Image and video</td><td></td><td class="money">$35.20</td></tr>
+    <tr><td>Voice, storage</td><td></td><td class="money">$0.00</td></tr>
+  </table>
+  </div>
+  <p>Images match the ledger ($32.60 production plus about $2 staging). The hole is text. Draft logs stored about 6 million prompt tokens, about 0.4 million completion tokens, and no reasoning tokens. The console has 30.1 million prompt, 4.7 million completion, and 8.9 million reasoning.</p>
+  <p>Rates match grok-4.5: prompt about $2 per million, completion and reasoning about $5–$6 per million, cache about $0.30 per million. Logged filler prompts averaged 3,869 tokens. The console volume means many more calls than the 1,247 logged block fills, or much larger prompts, or both. Frame-section copy is the unlogged grok-4.5 path that pastes the full generation prompt once per section.</p>
+  <p>The spend days match the CMS. Text spikes Oct 21–25 (Paul Murphy and PTM) and again at the end of the month (71 drafts on Oct 31). The image bar around Oct 11 matches Steve White’s photo run.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Model</th><th>Spend</th></tr>
+    <tr><td>grok-4.5</td><td class="money">$120.37</td></tr>
+    <tr><td>grok-imagine (the whole image line)</td><td class="money">$35.20</td></tr>
+    <tr><td>grok-4.3</td><td class="money">$12.65</td></tr>
+    <tr><td>Total</td><td class="money">$168.22</td></tr>
+  </table>
+  </div>
+  <p>grok-4-fast does not appear. The code still sends that id for the planner, compliance, FAQ, SEO, and the other short calls. xAI billed that traffic as grok-4.3 at $1.25 input / $2.50 output per million, not the $0.20 / $0.50 rate in the code. Explorer totals: 60,485,223 tokens and 56,399 requests, about 1,070 tokens per request. Draft logs recorded about 1,700 text calls and 652 images.</p>
+  <p>Not the hole: photo retries (652 × $0.05 is exactly $32.60), filler retries (1,186 of 1,247 first-try), generating the same page twice (one page had two drafts), and the Kangaroo key.</p>
+  <p>Who the tracked work belongs to: Paul Murphy (79 product drafts, 176 photos), PTM Specialty (51 product drafts, 129 photos), Steve White preview (9 drafts, 283 photos, 270 on October 10). Every October draft was a full generation. Freshness refresh was not used.</p>
+
+  <h3>How soon we can tell</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>When</th><th>What we learn</th><th>What we do not learn</th></tr>
+    <tr><td>Same day, no deploy. Usage Explorer on the JSG CMS key, grouped by model, then token type.</td><td>Which model produced the $121. This reading is already done. No further console chart is required to approve.</td><td>Which CMS stage (block fill vs frame heading vs FAQ).</td></tr>
+    <tr><td>After the logging work order is deployed. One full product-page generation.</td><td>Dollars per stage on that run, including frame copy and the real tick charge, on that client’s AI cost page.</td><td>October. New logs do not rewrite the past.</td></tr>
+    <tr><td>A normal week of client builds after that deploy.</td><td>Whether the mix holds across a site build, not one page.</td><td></td></tr>
+  </table>
+  </div>
+  <p>Tracking better is the first work order. Photo reuse and the lowest thinking setting do not need another console chart.</p>
+
+  <h3>Decisions on 2026-11-01</h3>
+  <ul>
+    <li>One shared API key stays. The key-split order is dropped.</li>
+    <li>Page copy stays on grok-4.5. Do not move the article to grok-4.3 unless a later staging page reads wrong. A short live sample did not show that. grok-4.5 rejects reasoning fully off. The lowest accepted value is minimal. That sample used 197 reasoning tokens on the current default and 34 on minimal.</li>
+    <li>Entire Page regeneration stays a full rewrite of the article and the photos. The freshness refresh does not intercept that choice.</li>
+  </ul>
+
+  <h3>Order 1 — Record the real xAI charge</h3>
+  <p>In scope:</p>
+  <ul>
+    <li>Persist the per-response charge (cost in USD ticks, 1 USD = 10 billion ticks) on every chat completion and every image response. The dashboard total uses that figure when the response included it.</li>
+    <li>Write the text usage row from the client that made the call. Do not depend on a module-level recorder the running server has left empty. October proved the current setter never stored a live text row.</li>
+    <li>Record the stages dropped or absent today: frame section, Problems section, answer summary, FAQ answer, SEO description, themed image prompt, blog image prompt.</li>
+    <li>Put those calls on the draft model log, next to planner, filler, and compliance.</li>
+    <li>Price grok-4.5 at $2 / $6 per million in the price table. The tick charge is the number the page shows when we have it.</li>
+    <li>One product-page generation on staging writes one row per real call, with tokens, model, stage, and USD ticks.</li>
+    <li>Those rows show on the client’s AI cost page, tied to the page. A month on that page is the cost of writing and regenerating that client’s pages. The bake adds nothing.</li>
+  </ul>
+  <p>Out of scope: changing which model runs, the image tier, publish, Factory docs, the Kangaroo key.</p>
+
+  <h3>Order 2 — Cheaper photos, and reuse an unchanged slot</h3>
+  <p>In scope:</p>
+  <ul>
+    <li>Draft and preview generation uses the $0.02 image model. The header photo may stay on the $0.05 quality model.</li>
+    <li>If the slot’s prompt matches the media file already on that slot, do not call the image API.</li>
+    <li>Image-only regen stays available and stays limited to the slots the operator chose. A preview tenant does not regenerate every photo as a side effect of a copy run.</li>
+    <li>Photos are requested while the page is being written, after the copy is staged, and again only on Images or Entire Page. Body regeneration keeps the current photos. The bake copies saved files.</li>
+    <li>Expected tracked saving at October’s volume: the $32.60 image line moves toward about $13 if most slots leave the quality model, and lower when unchanged slots are skipped. The chart on the Today tab uses a more cautious half-and-half sketch (about $25) so the header can stay at 5 cents. Steve White’s October 10 run (270 photos, almost no new copy) is the case this is for.</li>
+  </ul>
+  <p>Out of scope: a second image vendor, changing copy prompts, auto-publish.</p>
+
+  <h3>Order 3 — Fewer grok-4.5 calls on product-page copy</h3>
+  <p>In scope:</p>
+  <ul>
+    <li>JSON block fill, frame headings, and Problems copy send reasoning effort minimal. The model rejects none.</li>
+    <li>Frame headings for one page are one call, not one call per section, and that call does not receive the full generation prompt.</li>
+    <li>Planner and compliance stay on the fast id. Fix the price table: that id is billed as grok-4.3 at $1.25 / $2.50, and it was only $12.65 of this bill.</li>
+    <li>Page copy stays on grok-4.5.</li>
+  </ul>
+  <p>Out of scope: moving the article to grok-4.3, rewriting prompt templates for voice, changing the block schema, the blog requirement for a comparison block and a table.</p>
+
+  <h3>Order 4 — Entire Page stays a full rewrite</h3>
+  <p>In scope:</p>
+  <ul>
+    <li>The Regenerate chooser’s Entire Page action keeps the full pipeline: new article and new photos.</li>
+    <li>Body regeneration keeps the current photos, as it does today.</li>
+    <li>Images regeneration replaces only the selected picture slots, as it does today.</li>
+    <li>The scheduled freshness refresh stays a light edit of the current article. It is not wired to the Entire Page button.</li>
+    <li>First generation of an empty page stays a full run.</li>
+  </ul>
+  <p>Out of scope: changing the freshness edit rules themselves, or publishing.</p>
+
+  <h3>Approval</h3>
+  <p>Key split is dropped. grok-4.3 for the article is dropped unless a later staging page reads wrong. Approve the four remaining orders, or mark which to drop, before anything is written into Factory. No deploy until then.</p>
+</section>
+
+<section class="pane" id="risk">
+  <h2>Risks</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Risk</th><th>Likelihood / impact</th><th>Mitigation</th><th>Owner</th></tr>
+    <tr><td>Lowest thinking makes a long page flatter or more generic than the short landscaper sample.</td><td>Medium / medium</td><td>Read one full staging coverage page before a client build uses it. The invented-fact checks and the retry stay.</td><td>Connor</td></tr>
+    <tr><td>The 2-cent photo looks more synthetic on a supporting slot.</td><td>Medium / low</td><td>Keep the header on the 5-cent model. Look at one page of both.</td><td>Connor</td></tr>
+    <tr><td>The $116 “after” sketch does not survive a real page. Long briefs may still think a lot even on minimal.</td><td>Medium / low</td><td>Workstream 1 measures one real page before anyone treats the sketch as a savings target.</td><td>Connor</td></tr>
+    <tr><td>Someone expects Entire Page to become a light edit.</td><td>Low / high if it happened</td><td>Order 4 keeps that button on the full pipeline. The light edit stays on the schedule.</td><td>Connor</td></tr>
+  </table>
+  </div>
+  <h4 style="color:var(--red)">The honest caveat</h4>
+  <p>We know where the $168 went. We do not yet know how many dollars a full coverage page saves, because the sample was one short section with a 630-token prompt. The production brief is several times longer, and most of the 56,399 requests were never written down. The first order exists so the second and third can be judged on a real page.</p>
+  <h2>Open questions</h2>
+  <ul>
+    <li>None that block approval. The open measurement is the dollar change on one full staging page after orders 1 and 3.</li>
+  </ul>
+</section>
+
+<section class="pane" id="faq">
+  <h3>Why was the dashboard so far off?</h3>
+  <p>It recorded a saved photo at 5 cents, and it never recorded a live writing call. The writing model’s private thinking is a separate charge, and the client does not store it. That is the $45. The long brief, sent over and over, is the $58.</p>
+  <h3>Does the bake spend this money?</h3>
+  <p>No. The bake copies words and picture files that were already saved. The spend happens while the page is being created or regenerated.</p>
+  <h3>Will Entire Page still rewrite the whole page?</h3>
+  <p>Yes. New article and new photos. Body still rewrites words and keeps photos. Images still replaces only the slots you select. The scheduled light edit is a different path.</p>
+  <h3>Why not switch the article to the cheaper grok-4.3?</h3>
+  <p>That model was only $12.65 of this bill. The article is the $120. A short sample of less thinking on grok-4.5 still read like the agency page. Moving the whole article is the larger voice change, and it waits unless a full staging page reads wrong.</p>
+  <h3>Can thinking be turned off?</h3>
+  <p>Not on grok-4.5. The API rejects “none.” The lowest setting is “minimal.” On the landscaper sample that cut thinking tokens from 197 to 34.</p>
+  <h3>Where will we see the cost of a build?</h3>
+  <p>On that client’s AI cost page in the dashboard, at the moment the page is written or regenerated. Each writing step and each photo is a line on that page, tied to the page. The month total is what it cost to create and regenerate that client’s pages. The bake adds no line.</p>
+  <h3>What does done look like?</h3>
+  <p>The four orders are in Factory only after approval, then shipped. A staging coverage page shows its real dollars on the AI cost page. Thinking on that run is at the low setting. An unchanged picture is not requested again. Entire Page still rewrites the page. No client site is published by this work.</p>
+</section>
+
+</main>
+
+<script type="application/json" id="artifact-state">
+{"as_of":"2026-11-01","workstreams":[{"id":"1","status":"next","owner":"Connor","what":"Record the real charge"},{"id":"2","status":"next","owner":"Connor","what":"Cheaper photos and reuse"},{"id":"3","status":"next","owner":"Connor","what":"Minimal reasoning, one heading call"},{"id":"4","status":"done","owner":"Connor","what":"Entire Page stays a full rewrite"}]}
+</script>
+<script>
+function goTab(id){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.pane === id));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === id));
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => goTab(t.dataset.pane)));
+</script>
+</body>
+</html>
